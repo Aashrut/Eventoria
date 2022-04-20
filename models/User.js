@@ -18,12 +18,14 @@ const userSchema = new mongoose.Schema({
     uname: {
         type: String,
         required: true,
-        max: 30
+        max: 30,
+        unique: true
     },
     email: {
         type: String,
         required: true,
-        max: 256
+        max: 256,
+        unique: true
     },
     password: {
         type: String,
