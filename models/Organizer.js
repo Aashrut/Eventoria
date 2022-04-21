@@ -4,7 +4,7 @@ mongoose.connect(MONGOURI, {useNewUrlParser: true, useUnifiedTopology: true});
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, 'MongoDB connection error:'));
 
-const userSchema = new mongoose.Schema({
+const organizerSchema = new mongoose.Schema({
     fname: {
         type: String,
         required: true,
@@ -35,6 +35,6 @@ const userSchema = new mongoose.Schema({
     regDate: {
         type: Date
     }
-}, {collection: "users"});
+}, {collection: "organizers"});
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('Organizer', organizerSchema);

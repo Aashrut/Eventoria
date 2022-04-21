@@ -11,7 +11,7 @@ exports.passwordHash = async (password, saltRounds) => {
     return null;
 };
 
-const comparePasswords = async (password, hash) => {
+exports.comparePasswords = async (password, hash) => {
     try {
         const matchFound = await bcrypt.compare(password, hash);
         return matchFound;
