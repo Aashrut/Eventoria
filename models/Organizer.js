@@ -30,11 +30,15 @@ const organizerSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        max: 40
+        max: 256
     },
     regDate: {
         type: Date
+    },
+    type: {
+        type: String,
+        required: true
     }
-}, {collection: "organizers"});
+});
 
-module.exports = mongoose.model('Organizer', organizerSchema);
+module.exports = mongoose.model('Organizer', organizerSchema, "organizers");

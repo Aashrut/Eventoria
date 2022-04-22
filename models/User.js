@@ -34,7 +34,11 @@ const userSchema = new mongoose.Schema({
     },
     regDate: {
         type: Date
+    },
+    type: {
+        type: String,
+        required: true
     }
-}, {collection: "users"});
+});
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema, "users");

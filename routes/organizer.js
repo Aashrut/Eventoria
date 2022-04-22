@@ -2,59 +2,26 @@ const express = require("express");
 const router = express.Router();
 const Organizer = require("../models/Organizer");
 const {passwordHash, comparePasswords} = require("../helpers/auth");
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-
-passport.use(new LocalStrategy( {passReqToCallback: true},
-    (req, username, password, done) => {
-        Organizer.findOne({username: username.toLowerCase()}, async (err, organizer) => {
-            if (err) {
-                console.log(err);
-                return done(err);
-            }
-
-            if (!organizer) {
-                console.log(`User with username: ${username} does not exist`);
-                return done(null, false, { message: `User with username: ${username} does not exist` });
-            }
-            
-            if (!(await comparePasswords(password, organizer.password))) {
-                console.log("Invalid Password");
-                return done(null, false, { message: `Incorrect Username/Password provided` });
-            }
-            
-            console.log(organizer);
-            req.session.type = 'organizer';
-            console.log(req.session);
-            
-            return done(null, organizer);
-        });
-    }
-));
-
-passport.serializeUser((organizer, done) => {
-    done(null, organizer._id);
-});
-  
-passport.deserializeUser( (_id, done) => {
-    Organizer.findById(_id, (err, organizer) => {
-        if (err) return done(err);
-        done(null, organizer);
-    });
-});
 
 router.get("/", (req, res, next) => {
     res.redirect("/organizer/signup");
 });
 
 router.get("/signup", (req, res, next) => {
-    if (req.isUnauthenticated()) {
+    if (!req.session.isAuthenticated) {
         res.render("pages/signup", {submit: "/organizer/signup"});
     }
-    else {
+    else if (req.session.isAuthenticated && req.session.userType == 'user') {
+        res.redirect("/user/dashboard");
+    }
+    else if ((req.session.isAuthenticated && req.session.userType == 'organizer')) {
         res.redirect("/organizer/dashboard");
     }
-})
+    else {
+        req.session.destroy();
+        res.redirect("/");
+    }
+});
 
 router.post("/signup", async (req, res, next) => {
     console.log(req.body);
@@ -91,32 +58,66 @@ router.post("/signup", async (req, res, next) => {
 });
 
 router.get("/login", (req, res, next) => {
-    if (req.isUnauthenticated()) {
+    if (!req.session.isAuthenticated) {
         res.render("pages/login", {submit: "/organizer/login"});
     }
-    else {
+    else if (req.session.isAuthenticated && req.session.userType == 'user') {
+        res.redirect("/user/dashboard");
+    }
+    else if ((req.session.isAuthenticated && req.session.userType == 'organizer')) {
         res.redirect("/organizer/dashboard");
     }
-})
+    else {
+        req.session.destroy();
+        res.redirect("/");
+    }
+});
 
-router.post("/login",
-    passport.authenticate("local",{
-        successRedirect: "/organizer/dashboard",
-    })
-);
+router.post("/login", (req, res, next) => {
+    const username = req.body.username.toLowerCase();
+    const password = req.body.password;
+    Organizer.findOne({username: username}, async (err, organizer) => {
+        if (err) {
+            console.log(err);
+            return res.redirect("/organizer/login");
+        }
+
+        if (!organizer) {
+            console.log({ message: `User with username: ${username} does not exist` });
+            return res.redirect("/organizer/login");
+        }
+
+        if (!(await comparePasswords(password, organizer.password))) {
+            console.log({ message: `Incorrect Username/Password provided` });
+            return res.redirect("/organizer/login");
+        }
+
+        req.session.userType = 'organizer';
+        req.session.username = username;
+        req.session.isAuthenticated = true;
+        res.redirect("/organizer/dashboard");
+    });
+});
 
 router.all("/logout", (req, res, next) => {
-    req.logout();
+    req.session.destroy();
     res.redirect("/organizer/login");
 });
 
 router.get("/dashboard", (req, res, next) => {
-    console.log(req.isAuthenticated());
-    if (req.isAuthenticated()) {
+    if (req.session.isAuthenticated && req.session.userType == 'organizer') {
         res.render("pages/dashboard");
     }
+    else if (req.session.isAuthenticated && req.session.userType == 'user'){
+        console.log("Invalid Authorization! You are not an Organizer!");
+        res.redirect("/user/dashboard");
+    }
+    else if (!req.session.isAuthenticated) {
+        res.redirect("/organizer/signup");
+    }
     else {
-        res.redirect("/organizer/login");
+        req.session.destroy();
+        res.redirect("/");
     }
 });
 

@@ -2,59 +2,26 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const {passwordHash, comparePasswords} = require("../helpers/auth");
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-
-passport.use(new LocalStrategy( {passReqToCallback: true},
-    (req, username, password, done) => {
-        User.findOne({username: username.toLowerCase()}, async (err, user) => {
-            if (err) {
-                console.log(err);
-                return done(err);
-            }
-
-            if (!user) {
-                console.log(`User with username: ${username} does not exist`);
-                return done(null, false, { message: `User with username: ${username} does not exist` });
-            }
-
-            if (!(await comparePasswords(password, user.password))) {
-                console.log("Invalid Password");
-                return done(null, false, { message: `Incorrect Username/Password provided` });
-            }
-            
-            console.log(user);
-            req.session.type = 'user';
-            console.log(req.session);
-            
-            return done(null, user);
-        });
-    }
-));
-
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-});
-  
-passport.deserializeUser( (_id, done) => {
-    User.findById(_id, (err, user) => {
-        if (err) return done(err);
-        done(null, user);
-    });
-});
 
 router.get("/", (req, res, next) => {
     res.redirect("/user/signup");
 });
 
 router.get("/signup", (req, res, next) => {
-    if (req.isUnauthenticated()) {
+    if (!req.session.isAuthenticated) {
         res.render("pages/signup", {submit: "/user/signup"});
     }
-    else {
+    else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");
     }
-})
+    else if ((req.session.isAuthenticated && req.session.userType == 'organizer')) {
+        res.redirect("/organizer/dashboard");
+    }
+    else {
+        req.session.destroy();
+        res.redirect("/");
+    }
+});
 
 router.post("/signup", async (req, res, next) => {
     console.log(req.body);
@@ -91,32 +58,66 @@ router.post("/signup", async (req, res, next) => {
 });
 
 router.get("/login", (req, res, next) => {
-    if (req.isUnauthenticated()) {
+    if (!req.session.isAuthenticated) {
         res.render("pages/login", {submit: "/user/login"});
     }
-    else {
+    else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");
+    }
+    else if ((req.session.isAuthenticated && req.session.userType == 'organizer')) {
+        res.redirect("/organizer/dashboard");
+    }
+    else {
+        req.session.destroy();
+        res.redirect("/");
     }
 });
 
-router.post("/login",
-    passport.authenticate("local",{
-        successRedirect: "/user/dashboard",
-    })
-);
+router.post("/login", (req, res, next) => {
+    const username = req.body.username.toLowerCase();
+    const password = req.body.password;
+    User.findOne({username: username}, async (err, user) => {
+        if (err) {
+            console.log(err);
+            return res.redirect("/user/login");
+        }
+
+        if (!user) {
+            console.log({ message: `User with username: ${username} does not exist` });
+            return res.redirect("/user/login");
+        }
+
+        if (!(await comparePasswords(password, user.password))) {
+            console.log({ message: `Incorrect Username/Password provided` });
+            return res.redirect("/user/login");
+        }
+
+        req.session.userType = 'user';
+        req.session.username = username;
+        req.session.isAuthenticated = true;
+        res.redirect("/user/dashboard");
+    });
+});
 
 router.all("/logout", (req, res, next) => {
-    req.logout();
+    req.session.destroy();
     res.redirect("/user/login");
 });
 
 router.get("/dashboard", (req, res, next) => {
-    console.log(req.isAuthenticated());
-    if (req.isAuthenticated()) {
+    if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.render("pages/dashboard")
     }
+    else if (req.session.isAuthenticated && req.session.userType == 'organizer') {
+        console.log("Invalid Authorization! You are not a participant!");
+        res.redirect("/organizer/dashboard");
+    }
+    else if (!req.session.isAuthenticated) {
+        res.redirect("/user/signup");
+    }
     else {
-        res.redirect("/user/login");
+        req.session.destroy();
+        res.redirect("/");
     }
 });
 
