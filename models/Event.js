@@ -4,55 +4,50 @@ mongoose.connect(MONGOURI, {useNewUrlParser: true, useUnifiedTopology: true});
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, 'MongoDB connection error:'));
 
-const organizerSchema = new mongoose.Schema({
-    fname: {
+const eventSchema = new mongoose.Schema({
+    eventid: {
         type: String,
         required: true,
-        max: 30
+        max: 30,
+        unique: true
     },
-    lname: {
+    eventname: {
         type: String,
         required: true,
         max: 30
     },
     organization: {
-        type:String,
+        type: String,
         required: true,
         max: 50
+    },
+    eventdate: {
+        type: Date,
+        required: true
+    },
+    hostname: {
+        type: String,
+        required: true,
+        max: 61
+    },
+    hostusername: {
+        type: String,
+        required: true,
+        max: 30
     },
     position: {
         type: String,
         required: true,
         max: 50
     },
-    username: {
-        type: String,
-        required: true,
-        max: 30,
-        unique: true
+    orglogo: {
+        data: Buffer,
+        contentType: String,
     },
-    email: {
-        type: String,
-        required: true,
-        max: 256,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true,
-        max: 256
-    },
-    regDate: {
-        type: Date
-    },
-    type: {
-        type: String,
-        required: true
-    },
-    events: {
-        type: [String],
-        required: true
+    hostsign: {
+        data: Buffer,
+        contentType: String,
     }
 });
 
-module.exports = mongoose.model('Organizer', organizerSchema, "organizers");
+module.exports = mongoose.model('Event', eventSchema, "events");

@@ -3,6 +3,7 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const userRouter = require("./routes/user");
 const organizerRouter = require("./routes/organizer");
+const eventRouter = require("./routes/event");
 const logger = require("morgan");
 
 const PORT = process.env.PORT || 4000
@@ -27,6 +28,7 @@ app.set('view engine', 'ejs');
 
 app.use("/user", userRouter);
 app.use("/organizer", organizerRouter);
+app.use("/event", eventRouter);
 
 app.get("/", (req, res, next) => {
     res.render("pages/index");

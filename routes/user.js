@@ -9,7 +9,7 @@ router.get("/", (req, res, next) => {
 
 router.get("/signup", (req, res, next) => {
     if (!req.session.isAuthenticated) {
-        res.render("pages/signup", {submit: "/user/signup"});
+        res.render("pages/signup", {userType: "user"});
     }
     else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");
@@ -59,7 +59,7 @@ router.post("/signup", async (req, res, next) => {
 
 router.get("/login", (req, res, next) => {
     if (!req.session.isAuthenticated) {
-        res.render("pages/login", {submit: "/user/login"});
+        res.render("pages/login", {userType: "user"});
     }
     else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");

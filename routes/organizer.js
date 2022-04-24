@@ -9,7 +9,7 @@ router.get("/", (req, res, next) => {
 
 router.get("/signup", (req, res, next) => {
     if (!req.session.isAuthenticated) {
-        res.render("pages/signup", {submit: "/organizer/signup"});
+        res.render("pages/signup", {userType: "organizer"});
     }
     else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");
@@ -29,6 +29,8 @@ router.post("/signup", async (req, res, next) => {
     const organizer = new Organizer({
         fname: req.body.fname,
         lname: req.body.lname,
+        organization: req.body.organization,
+        position: req.body.position,
         username: req.body.username.toLowerCase(),
         email: req.body.email.toLowerCase(),
         password: hashedPassword,
@@ -59,7 +61,7 @@ router.post("/signup", async (req, res, next) => {
 
 router.get("/login", (req, res, next) => {
     if (!req.session.isAuthenticated) {
-        res.render("pages/login", {submit: "/organizer/login"});
+        res.render("pages/login", {userType: "organizer"});
     }
     else if (req.session.isAuthenticated && req.session.userType == 'user') {
         res.redirect("/user/dashboard");
